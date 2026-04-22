@@ -39,6 +39,10 @@ export default function InsidePage() {
   const chevronRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // The page transition uses scroll:false to avoid interrupting the overlay
+    // animation — so we scroll to top manually here.
+    window.scrollTo(0, 0);
+
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
     if (titleRef.current) {

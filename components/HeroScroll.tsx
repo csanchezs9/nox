@@ -1,67 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import Balatro from "./Balatro";
 import BubbleMenu, { type MenuItem } from "./BubbleMenu";
+import { usePageTransition } from "./PageTransitionProvider";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function HeroScroll() {
-  const router     = useRouter();
-  const [navOpen,      setNavOpen]      = useState(false);
-  const [transitioning, setTransitioning] = useState(false);
+  const { triggerTransition } = usePageTransition();
+  const [navOpen, setNavOpen] = useState(false);
 
-  const spacerRef       = useRef<HTMLDivElement>(null);
-  const heroRef         = useRef<HTMLDivElement>(null);
-  const zoomRef         = useRef<HTMLDivElement>(null);
-  const bgCoverRef      = useRef<HTMLDivElement>(null);
-  const oRef            = useRef<HTMLDivElement>(null);
-  const blackRef        = useRef<HTMLDivElement>(null);
-  const transOverlayRef = useRef<HTMLDivElement>(null);
-  const transTextRef    = useRef<HTMLDivElement>(null);
-  const pillRectRef     = useRef<DOMRect | null>(null);
+  const spacerRef  = useRef<HTMLDivElement>(null);
+  const heroRef    = useRef<HTMLDivElement>(null);
+  const zoomRef    = useRef<HTMLDivElement>(null);
+  const bgCoverRef = useRef<HTMLDivElement>(null);
+  const oRef       = useRef<HTMLDivElement>(null);
+  const blackRef   = useRef<HTMLDivElement>(null);
 
-  // ─── "inside" click → zoom transition → route ───────────────────────────
-  const handleInsideClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
-    pillRectRef.current = e.currentTarget.getBoundingClientRect();
-    setTransitioning(true);
-  }, []);
-
-  // Runs once the overlay mounts (transitioning = true)
-  useEffect(() => {
-    if (!transitioning) return;
-    const overlay = transOverlayRef.current;
-    const text    = transTextRef.current;
-    const rect    = pillRectRef.current;
-    if (!overlay || !text || !rect) return;
-
-    const cx = rect.left + rect.width  / 2;
-    const cy = rect.top  + rect.height / 2;
-
-    // Scale origin = center of the clicked pill
-    overlay.style.transformOrigin = `${cx}px ${cy}px`;
-
-    const tl = gsap.timeline({
-      onComplete: () => router.push("/inside", { scroll: false }),
-    });
-
-    // Overlay expands from pill outward — fills screen
-    tl.fromTo(overlay,
-      { scale: 0.01, opacity: 1 },
-      { scale: 1, duration: 0.28, ease: "power4.in" },
-      0
-    );
-    // "inside" text zooms in once overlay is mostly full
-    tl.fromTo(text,
-      { scale: 0.35, opacity: 0 },
-      { scale: 1,    opacity: 1, duration: 0.22, ease: "power2.out" },
-      0.16
-    );
-  }, [transitioning, router]);
+  // ─── "inside" click → layout-level zoom transition ───────────────────────
+  const handleInsideClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      triggerTransition(e.currentTarget.getBoundingClientRect(), "/inside", "inside");
+    },
+    [triggerTransition]
+  );
 
   const NOX_ITEMS = useMemo<MenuItem[]>(() => [
     { label: "inside",     href: "/inside",     ariaLabel: "Inside",     rotation: -8, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" }, onClick: handleInsideClick },
@@ -309,38 +275,6 @@ export default function HeroScroll() {
           staggerDelay={0.09}
         />
       </div>
-
-      {/* ── "inside" transition overlay — mounts on click, then navigates ── */}
-      {transitioning && (
-        <div
-          ref={transOverlayRef}
-          style={{
-            position:   "fixed",
-            inset:      0,
-            zIndex:     50,
-            background: "#000",
-            display:    "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            ref={transTextRef}
-            style={{
-              fontFamily:    "'Jost', sans-serif",
-              fontWeight:    200,
-              fontSize:      "clamp(5rem, 22vw, 22rem)",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color:         "#fff",
-              lineHeight:    1,
-              opacity:       0,
-            }}
-          >
-            inside
-          </div>
-        </div>
-      )}
     </>
   );
 }
