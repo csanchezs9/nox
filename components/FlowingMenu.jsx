@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
+import Balatro from './Balatro';
 
 import './FlowingMenu.css';
 
@@ -21,9 +22,10 @@ function FlowingMenu({
             {...item}
             speed={speed}
             textColor={textColor}
-            marqueeBgColor={marqueeBgColor}
-            marqueeTextColor={marqueeTextColor}
+            marqueeBgColor={item.balatroProps ? 'transparent' : (item.marqueeBgColor ?? marqueeBgColor)}
+            marqueeTextColor={item.marqueeTextColor ?? marqueeTextColor}
             borderColor={borderColor}
+            balatroProps={item.balatroProps}
           />
         ))}
       </nav>
@@ -31,7 +33,7 @@ function FlowingMenu({
   );
 }
 
-function MenuItem({ link, text, image, speed, textColor, marqueeBgColor, marqueeTextColor, borderColor, onClick }) {
+function MenuItem({ link, text, image, speed, textColor, marqueeBgColor, marqueeTextColor, borderColor, onClick, balatroProps }) {
   const itemRef = useRef(null);
   const marqueeRef = useRef(null);
   const marqueeInnerRef = useRef(null);
@@ -138,7 +140,12 @@ function MenuItem({ link, text, image, speed, textColor, marqueeBgColor, marquee
         {text}
       </a>
       <div className="marquee" ref={marqueeRef} style={{ backgroundColor: marqueeBgColor }}>
-        <div className="marquee__inner-wrap">
+        {balatroProps && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            <Balatro mouseInteraction={false} {...balatroProps} />
+          </div>
+        )}
+        <div className="marquee__inner-wrap" style={{ position: 'relative', zIndex: 1 }}>
           <div className="marquee__inner" ref={marqueeInnerRef} aria-hidden="true">
             {[...Array(repetitions)].map((_, idx) => (
               <div className="marquee__part" key={idx} style={{ color: marqueeTextColor }}>
