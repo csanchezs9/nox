@@ -51,6 +51,34 @@ export default function HeroScroll() {
     [triggerTransition]
   );
 
+  // ─── "nosotros" click → layout-level zoom transition ─────────────────────
+  const handleNosotrosClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      triggerTransition(
+        e.currentTarget.getBoundingClientRect(),
+        "/nosotros",
+        "nosotros",
+        {
+          showLabel: false,
+          balatroProps: {
+            mouseInteraction: false,
+            spinSpeed:        2.2,
+            spinRotation:     -0.65,
+            color1:           "#101010",
+            color2:           "#050505",
+            color3:           "#000000",
+            contrast:         2.6,
+            lighting:         0.15,
+            spinAmount:       0.12,
+            pixelFilter:      2000,
+          },
+        }
+      );
+    },
+    [triggerTransition]
+  );
+
   const NOX_ITEMS = useMemo(() => [
     {
       link: "/inside", text: "inside", image: "/images/inside-parties/489009784_18023127818681417_3864332976154896011_n.jpg",
@@ -73,11 +101,12 @@ export default function HeroScroll() {
       balatroProps: { spinSpeed: 4.0, spinRotation: 1.0, color1: "#006BB4", color2: "#4da6ff", color3: "#003366", contrast: 3.0, lighting: 0.3, spinAmount: 0.2, pixelFilter: 2000 },
     },
     {
-      link: "#nosotros", text: "nosotros", image: "/images/owners/490300441_18505615783036380_1886890642787923809_n.jpg",
+      link: "/nosotros", text: "nosotros", image: "/images/owners/490300441_18505615783036380_1886890642787923809_n.jpg",
       marqueeTextColor: "#fff",
-      balatroProps: { spinSpeed: 2.0, spinRotation: -0.5, color1: "#444444", color2: "#222222", color3: "#111111", contrast: 2.0, lighting: 0.2, spinAmount: 0.1, pixelFilter: 2000 },
+      onClick: handleNosotrosClick,
+      balatroProps: { spinSpeed: 2.2, spinRotation: -0.65, color1: "#121212", color2: "#070707", color3: "#000000", contrast: 2.6, lighting: 0.15, spinAmount: 0.12, pixelFilter: 2000 },
     },
-  ], [handleInsideClick]);
+  ], [handleInsideClick, handleNosotrosClick]);
 
   // ─── Lenis smooth scroll ───
   useEffect(() => {
@@ -216,7 +245,7 @@ export default function HeroScroll() {
       {/* Black cover — sits between Balatro and Hero, fades out on scroll */}
       <div
         ref={bgCoverRef}
-        className="fixed inset-0 z-[1] bg-black pointer-events-none"
+        className="fixed inset-0 z-1 bg-black pointer-events-none"
       />
 
       {/* Scroll spacer — drives the scroll animation (180vh of scrollable area) */}
