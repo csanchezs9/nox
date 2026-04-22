@@ -5,15 +5,17 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import Balatro from "./Balatro";
-import BubbleMenu, { type MenuItem } from "./BubbleMenu";
+import FlowingMenu from "./FlowingMenu";
 import { usePageTransition } from "./PageTransitionProvider";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function HeroScroll() {
   const { triggerTransition } = usePageTransition();
-  const [navOpen, setNavOpen] = useState(false);
+  const [balatroVisible, setBalatroVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  const lenisRef   = useRef<InstanceType<typeof Lenis> | null>(null);
   const spacerRef  = useRef<HTMLDivElement>(null);
   const heroRef    = useRef<HTMLDivElement>(null);
   const zoomRef    = useRef<HTMLDivElement>(null);
@@ -29,12 +31,12 @@ export default function HeroScroll() {
     [triggerTransition]
   );
 
-  const NOX_ITEMS = useMemo<MenuItem[]>(() => [
-    { label: "inside",     href: "/inside",     ariaLabel: "Inside",     rotation: -8, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" }, onClick: handleInsideClick },
-    { label: "events",    href: "#events",     ariaLabel: "Events",     rotation:  8, hoverStyles: { bgColor: "#006BB4", textColor: "#fff" } },
-    { label: "experience",href: "#experience", ariaLabel: "Experience", rotation: -4, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" } },
-    { label: "about",     href: "#about",      ariaLabel: "About NOX",  rotation:  4, hoverStyles: { bgColor: "#006BB4", textColor: "#fff" } },
-    { label: "contact",   href: "#contact",    ariaLabel: "Contact",    rotation: -8, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" } },
+  const NOX_ITEMS = useMemo(() => [
+    { link: "/inside",     text: "inside",     image: "/images/inside-parties/489009784_18023127818681417_3864332976154896011_n.jpg", onClick: handleInsideClick },
+    { link: "#spicy",      text: "spicy",      image: "/images/spicy/652775500_17958825516079006_5884347453373111210_n.jpg" },
+    { link: "#torre-alta", text: "torre alta", image: "/images/torre-alta/503898684_17926730436079006_6127884364169973025_n.jpg" },
+    { link: "#flyers",     text: "flyers",     image: "/images/flyers/610213794_18436482181109762_2654311840714841503_n.jpg" },
+    { link: "#nosotros",   text: "nosotros",   image: "/images/owners/490300441_18505615783036380_1886890642787923809_n.jpg" },
   ], [handleInsideClick]);
 
   // ─── Lenis smooth scroll ───
@@ -45,6 +47,7 @@ export default function HeroScroll() {
       smoothWheel: true,
     });
 
+    lenisRef.current = lenis;
     lenis.on("scroll", ScrollTrigger.update);
     const onRaf = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(onRaf);
@@ -52,6 +55,7 @@ export default function HeroScroll() {
 
     return () => {
       gsap.ticker.remove(onRaf);
+      lenisRef.current = null;
       lenis.destroy();
     };
   }, []);
@@ -101,8 +105,12 @@ export default function HeroScroll() {
             end:     "bottom bottom",
             scrub:   0.3,
             invalidateOnRefresh: true,
-            // Auto-open the nav when the portal is ~92% complete
-            onUpdate: (self) => setNavOpen(self.progress > 0.92),
+            onUpdate: (self) => {
+              const inside = self.progress > 0.92;
+              const show   = self.progress > 0.45;
+              setBalatroVisible(show);
+              if (!inside) setMenuOpen(false);
+            },
           },
         });
 
@@ -238,41 +246,91 @@ export default function HeroScroll() {
         </div>
       </div>
 
-      {/* Content layer — shows above Balatro after hero fades */}
-      <div className="relative z-10 min-h-screen" />
 
-      {/* ── Navigation — fades in once portal animation completes ── */}
+      {/* ── Ver menú button — aparece cuando Balatro es visible ── */}
       <div
         style={{
           position:      "fixed",
           inset:         0,
           zIndex:        30,
-          opacity:       navOpen ? 1 : 0,
-          transition:    "opacity 0.9s ease",
-          pointerEvents: navOpen ? "auto" : "none",
+          display:        "flex",
+          alignItems:     "center",
+          justifyContent: "center",
+          opacity:       balatroVisible && !menuOpen ? 1 : 0,
+          transition:    "opacity 0.6s ease",
+          pointerEvents: balatroVisible && !menuOpen ? "auto" : "none",
         }}
       >
-        <BubbleMenu
-          logo={
-            <span style={{
-              fontFamily:    "'Jost', sans-serif",
-              fontWeight:    200,
-              fontSize:      "1.5rem",
-              color:         "#fff",
-              letterSpacing: "-0.01em",
-            }}>
-              N
-            </span>
-          }
-          forceOpen={navOpen}
-          useFixedPosition={false}
-          menuBg="#0d0d0d"
-          menuContentColor="#ffffff"
-          menuAriaLabel="Toggle navigation"
+        <button
+          onClick={() => setMenuOpen(true)}
+          style={{
+            fontFamily:      "'Jost', sans-serif",
+            fontWeight:      300,
+            fontSize:        "clamp(0.75rem, 1.2vw, 1rem)",
+            letterSpacing:   "0.2em",
+            textTransform:   "uppercase",
+            color:           "#ffffff",
+            background:      "transparent",
+            border:          "1px solid rgba(255,255,255,0.4)",
+            borderRadius:    "999px",
+            padding:         "0.75em 2em",
+            cursor:          "pointer",
+            backdropFilter:  "blur(4px)",
+            transition:      "border-color 0.3s ease, background 0.3s ease",
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.9)";
+            (e.currentTarget as HTMLButtonElement).style.background  = "rgba(255,255,255,0.06)";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.4)";
+            (e.currentTarget as HTMLButtonElement).style.background  = "transparent";
+          }}
+        >
+          ver menú
+        </button>
+      </div>
+
+      {/* ── FlowingMenu overlay ── */}
+      <div
+        style={{
+          position:      "fixed",
+          inset:         0,
+          zIndex:        40,
+          opacity:       menuOpen ? 1 : 0,
+          transition:    "opacity 0.5s ease",
+          pointerEvents: menuOpen ? "auto" : "none",
+        }}
+      >
+        {/* Cerrar al hacer click fuera del menú / botón X */}
+        <button
+          onClick={() => setMenuOpen(false)}
+          aria-label="Cerrar menú"
+          style={{
+            position:    "fixed",
+            top:         "1.5rem",
+            right:       "1.5rem",
+            zIndex:      50,
+            background:  "transparent",
+            border:      "none",
+            color:       "#ffffff",
+            fontSize:    "1.5rem",
+            cursor:      "pointer",
+            lineHeight:  1,
+            opacity:     menuOpen ? 1 : 0,
+            transition:  "opacity 0.3s ease",
+          }}
+        >
+          ✕
+        </button>
+        <FlowingMenu
           items={NOX_ITEMS}
-          animationEase="back.out(1.4)"
-          animationDuration={0.45}
-          staggerDelay={0.09}
+          speed={15}
+          textColor="#ffffff"
+          bgColor="transparent"
+          marqueeBgColor="#DE443B"
+          marqueeTextColor="#ffffff"
+          borderColor="rgba(255,255,255,0.15)"
         />
       </div>
     </>
