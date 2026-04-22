@@ -35,7 +35,9 @@
   text-decoration: none;
   white-space: nowrap;
   font-weight: 600;
-  font-size: 4vh;
+  font-size: clamp(1.5rem, 4vh, 4vh);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .menu__item-link:hover {
@@ -88,9 +90,9 @@
 }
 
 .marquee__img {
-  width: 200px;
+  width: clamp(100px, 15vw, 200px);
   height: 7vh;
-  margin: 2em 2vw;
+  margin: 2em clamp(0.5rem, 2vw, 2vw);
   padding: 1em 0;
   border-radius: 50px;
   background-size: cover;
