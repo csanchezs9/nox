@@ -12,8 +12,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function HeroScroll() {
   const { triggerTransition } = usePageTransition();
-  const [balatroVisible, setBalatroVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuOpenRef   = useRef(false);
+  const buttonWrapRef = useRef<HTMLDivElement>(null);
 
   const lenisRef   = useRef<InstanceType<typeof Lenis> | null>(null);
   const spacerRef  = useRef<HTMLDivElement>(null);
@@ -79,8 +80,19 @@ export default function HeroScroll() {
     },
   ], [handleInsideClick]);
 
-  // ─── Lenis smooth scroll ───
+  // ─── ScrollTrigger mobile config ───
   useEffect(() => {
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    const normalizer = isTouch ? ScrollTrigger.normalizeScroll(true) : null;
+    return () => { normalizer?.kill(); };
+  }, []);
+
+  // ─── Lenis smooth scroll (desktop only — mobile has native momentum) ───
+  useEffect(() => {
+    const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    if (isTouch) return;
+
     const lenis = new Lenis({
       duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -146,10 +158,15 @@ export default function HeroScroll() {
             scrub:   0.3,
             invalidateOnRefresh: true,
             onUpdate: (self) => {
-              const inside = self.progress > 0.92;
-              const show   = self.progress > 0.45;
-              setBalatroVisible(show);
-              if (!inside) setMenuOpen(false);
+              const show = self.progress > 0.45 && !menuOpenRef.current;
+              if (buttonWrapRef.current) {
+                buttonWrapRef.current.style.opacity      = show ? "1" : "0";
+                buttonWrapRef.current.style.pointerEvents = show ? "auto" : "none";
+              }
+              if (self.progress <= 0.92 && menuOpenRef.current) {
+                menuOpenRef.current = false;
+                setMenuOpen(false);
+              }
             },
           },
         });
@@ -237,13 +254,7 @@ export default function HeroScroll() {
           }}
         >
           {/* Black overlay with transparent circle at the O — the "portal" */}
-          <div
-            ref={blackRef}
-            className="absolute inset-0"
-            style={{
-              background: "#000",  // will be replaced by radial-gradient on mount
-            }}
-          />
+          <div ref={blackRef} className="absolute inset-0 portal-black" />
 
           {/* Wordmark: sits on top of the black overlay */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -287,22 +298,30 @@ export default function HeroScroll() {
       </div>
 
 
-      {/* ── Ver menú button — aparece cuando Balatro es visible ── */}
+      {/* ── Ver menú button — GSAP controls opacity/pointerEvents directly ── */}
       <div
+        ref={buttonWrapRef}
         style={{
           position:      "fixed",
           inset:         0,
           zIndex:        30,
-          display:        "flex",
-          alignItems:     "center",
-          justifyContent: "center",
-          opacity:       balatroVisible && !menuOpen ? 1 : 0,
+          display:       "flex",
+          alignItems:    "center",
+          justifyContent:"center",
+          opacity:       0,
           transition:    "opacity 0.6s ease",
-          pointerEvents: balatroVisible && !menuOpen ? "auto" : "none",
+          pointerEvents: "none",
         }}
       >
         <button
-          onClick={() => setMenuOpen(true)}
+          onClick={() => {
+            menuOpenRef.current = true;
+            setMenuOpen(true);
+            if (buttonWrapRef.current) {
+              buttonWrapRef.current.style.opacity       = "0";
+              buttonWrapRef.current.style.pointerEvents = "none";
+            }
+          }}
           style={{
             fontFamily:      "'Jost', sans-serif",
             fontWeight:      300,
@@ -344,7 +363,7 @@ export default function HeroScroll() {
       >
         {/* Cerrar al hacer click fuera del menú / botón X */}
         <button
-          onClick={() => setMenuOpen(false)}
+          onClick={() => { menuOpenRef.current = false; setMenuOpen(false); }}
           aria-label="Cerrar menú"
           style={{
             position:    "fixed",

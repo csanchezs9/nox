@@ -13,5 +13,15 @@ html {
 body {
   background: #000;
   color: #fff;
-  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
+.portal-black {
+  background: #000;
+}
+
+/* iOS Safari: enable momentum scroll */
+html {
+  -webkit-overflow-scrolling: touch;
 }
