@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import Balatro from "./Balatro";
 import BubbleMenu, { type MenuItem } from "./BubbleMenu";
 import { usePageTransition } from "./PageTransitionProvider";
 
@@ -21,7 +20,7 @@ export default function HeroScroll() {
   const oRef       = useRef<HTMLDivElement>(null);
   const blackRef   = useRef<HTMLDivElement>(null);
 
-  // ─── "inside" click → layout-level zoom transition ───────────────────────
+  // ─── page-level zoom transitions ─────────────────────────────────────────
   const handleInsideClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
       triggerTransition(e.currentTarget.getBoundingClientRect(), "/inside", "inside");
@@ -29,13 +28,20 @@ export default function HeroScroll() {
     [triggerTransition]
   );
 
+  const handleSpicyClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      triggerTransition(e.currentTarget.getBoundingClientRect(), "/spicy", "Spicy");
+    },
+    [triggerTransition]
+  );
+
   const NOX_ITEMS = useMemo<MenuItem[]>(() => [
-    { label: "inside",     href: "/inside",     ariaLabel: "Inside",     rotation: -8, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" }, onClick: handleInsideClick },
-    { label: "events",    href: "#events",     ariaLabel: "Events",     rotation:  8, hoverStyles: { bgColor: "#006BB4", textColor: "#fff" } },
+    { label: "inside",     href: "/inside",  ariaLabel: "Inside",  rotation: -8, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" }, onClick: handleInsideClick },
+    { label: "Spicy",      href: "/spicy",   ariaLabel: "Spicy",   rotation:  8, hoverStyles: { bgColor: "#FF5722", textColor: "#fff" }, onClick: handleSpicyClick },
     { label: "experience",href: "#experience", ariaLabel: "Experience", rotation: -4, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" } },
     { label: "about",     href: "#about",      ariaLabel: "About NOX",  rotation:  4, hoverStyles: { bgColor: "#006BB4", textColor: "#fff" } },
     { label: "contact",   href: "#contact",    ariaLabel: "Contact",    rotation: -8, hoverStyles: { bgColor: "#DE443B", textColor: "#fff" } },
-  ], [handleInsideClick]);
+  ], [handleInsideClick, handleSpicyClick]);
 
   // ─── Lenis smooth scroll ───
   useEffect(() => {
@@ -106,7 +112,7 @@ export default function HeroScroll() {
           },
         });
 
-        // Zoom from 1 → 45 (the O grows to fill the viewport, revealing Balatro)
+        // Zoom from 1 → 45 (the O grows to fill the viewport, revealing the hero image)
         tl.fromTo(zoom,
           { scale: 1 },
           { scale: 45, ease: "power3.in", duration: 0.88 },
@@ -120,8 +126,8 @@ export default function HeroScroll() {
           0.02
         );
 
-        // At the very end (when fully zoomed in), fade out the hero so
-        // the user sees pure Balatro. On reverse, it fades back in.
+        // At the very end (when fully zoomed in), fade out the NOX hero layer so
+        // the user sees the photo background. On reverse, it fades back in.
         tl.fromTo(hero,
           { opacity: 1 },
           { opacity: 0, ease: "none", duration: 0.08 },
@@ -149,26 +155,29 @@ export default function HeroScroll() {
 
   return (
     <>
-      {/* Balatro — background, always running */}
+      {/* Hero photo background — revealed after the NOX portal animation */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <Balatro
-          mouseInteraction={false}
-          spinSpeed={4.0}
-          spinRotation={-1.5}
-          color1="#DE443B"
-          color2="#006BB4"
-          color3="#162325"
-          contrast={3.0}
-          lighting={0.3}
-          spinAmount={0.2}
-          pixelFilter={2000}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url('/images/logos/hero.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+
+        {/* Subtle layer to keep white menu text readable */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "rgba(0, 0, 0, 0.2)" }}
         />
       </div>
 
       {/* Black cover — sits between Balatro and Hero, fades out on scroll */}
       <div
         ref={bgCoverRef}
-        className="fixed inset-0 z-[1] bg-black pointer-events-none"
+        className="fixed inset-0 z-1 bg-black pointer-events-none"
       />
 
       {/* Scroll spacer — drives the scroll animation (180vh of scrollable area) */}
@@ -238,7 +247,7 @@ export default function HeroScroll() {
         </div>
       </div>
 
-      {/* Content layer — shows above Balatro after hero fades */}
+      {/* Content layer — shows above the photo after hero fades */}
       <div className="relative z-10 min-h-screen" />
 
       {/* ── Navigation — fades in once portal animation completes ── */}
@@ -247,9 +256,8 @@ export default function HeroScroll() {
           position:      "fixed",
           inset:         0,
           zIndex:        30,
-          opacity:       navOpen ? 1 : 0,
-          transition:    "opacity 0.9s ease",
-          pointerEvents: navOpen ? "auto" : "none",
+          opacity:       1,
+          pointerEvents: "auto",
         }}
       >
         <BubbleMenu
@@ -265,6 +273,8 @@ export default function HeroScroll() {
             </span>
           }
           forceOpen={navOpen}
+          showTopNav={navOpen}
+          showBottomBubble={navOpen}
           useFixedPosition={false}
           menuBg="#0d0d0d"
           menuContentColor="#ffffff"

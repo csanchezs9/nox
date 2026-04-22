@@ -1,220 +1,212 @@
-/* ─── Root nav bar ──────────────────────────────────────────────── */
-.bubble-menu {
-  left: 0;
-  right: 0;
-  top: 2em;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 0 2em;
-  pointer-events: none;
-  z-index: 99;
-}
-
-.bubble-menu.fixed    { position: fixed;    }
-.bubble-menu.absolute { position: absolute; }
-
-.bubble-menu .bubble {
-  --bubble-size: 48px;
-  width:         var(--bubble-size);
-  height:        var(--bubble-size);
-  border-radius: 50%;
-  background:    #fff;
-  box-shadow:    0 4px 16px rgba(0, 0, 0, 0.35);
-  display:       inline-flex;
-  align-items:   center;
-  justify-content: center;
-  pointer-events: auto;
-}
-
-.bubble-menu .logo-bubble,
-.bubble-menu .toggle-bubble { will-change: transform; }
-
-.bubble-menu .logo-bubble {
-  width:         auto;
-  min-height:    var(--bubble-size);
-  height:        var(--bubble-size);
-  padding:       0 18px;
-  border-radius: calc(var(--bubble-size) / 2);
-  gap:           8px;
-}
-
-.bubble-menu .toggle-bubble {
-  width:  var(--bubble-size);
-  height: var(--bubble-size);
-}
-
-.bubble-menu .bubble-logo {
-  max-height:  60%;
-  max-width:   100%;
-  object-fit:  contain;
-  display:     block;
-}
-
-.bubble-menu .logo-content {
-  display:         inline-flex;
+/* ── Nav bar ─────────────────────────────────────────────────────── */
+.nox-nav {
+  left:            0;
+  right:           0;
+  top:             2em;
+  display:         flex;
   align-items:     center;
-  justify-content: center;
-  height:          100%;
+  justify-content: space-between;
+  padding:         0 2.5em;
+  pointer-events:  none;
+  z-index:         99;
 }
 
-.bubble-menu .menu-btn {
-  border:          none;
-  cursor:          pointer;
+.nox-nav.fixed    { position: fixed;    }
+.nox-nav.absolute { position: absolute; }
+
+.nox-nav.nox-nav-hidden {
+  opacity:    0;
+  visibility: hidden;
+}
+
+.nox-nav-logo,
+.nox-nav-toggle { pointer-events: auto; }
+
+/* ── Hamburger toggle ─────────────────────────────────────────────── */
+.nox-nav-toggle {
+  background:     none;
+  border:         none;
+  cursor:         pointer;
+  display:        flex;
+  flex-direction: column;
+  gap:            7px;
+  padding:        10px;
+}
+
+.toggle-line {
+  display:          block;
+  width:            26px;
+  height:           1px;
+  background:       white;
+  transition:       transform 0.35s ease, opacity 0.35s ease;
+  transform-origin: center;
+}
+
+.nox-nav-toggle.open .toggle-line:first-child {
+  transform: translateY(4px) rotate(45deg);
+}
+.nox-nav-toggle.open .toggle-line:last-child {
+  transform: translateY(-4px) rotate(-45deg);
+}
+
+/* ── Bottom bubble trigger ────────────────────────────────────────── */
+.nox-bottom-bubble {
+  left:           50%;
+  bottom:         1.8rem;
+  width:          96px;
+  height:         96px;
+  border:         none;
+  border-radius:  999px;
+  background:     transparent;
+  cursor:         pointer;
+  display:        grid;
+  place-items:    center;
+  transform:      translateX(-50%);
+  z-index:        101;
+  pointer-events: auto;
+  transition:     transform 0.25s ease;
+}
+
+.nox-bottom-bubble.fixed    { position: fixed; }
+.nox-bottom-bubble.absolute { position: absolute; }
+
+.nox-bottom-bubble::before {
+  content:       "";
+  position:      absolute;
+  inset:         0;
+  border-radius: inherit;
+  background:    rgba(245, 245, 245, 0.88);
+  box-shadow:    0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.nox-bottom-bubble-core {
+  position:      relative;
+  width:         68px;
+  height:        68px;
+  border-radius: 999px;
+  display:       grid;
+  place-items:   center;
+  color:         #050505;
+}
+
+.nox-bottom-bubble-icon {
+  width:      100%;
+  height:     100%;
+  transition: transform 0.25s ease;
+}
+
+.nox-bottom-bubble:hover {
+  transform: translateX(-50%) scale(1.04);
+}
+
+.nox-bottom-bubble.open .nox-bottom-bubble-icon {
+  transform: scale(0.94);
+}
+
+.nox-bottom-bubble:focus-visible {
+  outline:        2px solid #ffffff;
+  outline-offset: 4px;
+}
+
+/* ── Full-screen overlay ──────────────────────────────────────────── */
+.nox-overlay {
+  inset:           0;
   display:         flex;
   flex-direction:  column;
   align-items:     center;
   justify-content: center;
+  z-index:         98;
+  overflow:        hidden;
+}
+
+.nox-overlay.fixed    { position: fixed;    }
+.nox-overlay.absolute { position: absolute; }
+
+/* ── Concentric circles ───────────────────────────────────────────── */
+.nox-circles {
+  position:       absolute;
+  width:          min(72vw, 72vh);
+  height:         min(72vw, 72vh);
+  pointer-events: none;
+  will-change:    transform;
+}
+
+/* ── Menu list ────────────────────────────────────────────────────── */
+.nox-menu-list {
+  position:        relative;
+  list-style:      none;
+  margin:          0;
   padding:         0;
-}
-
-.bubble-menu .menu-line {
-  width:            22px;
-  height:           1.5px;
-  border-radius:    2px;
-  display:          block;
-  margin:           0 auto;
-  transition:       transform 0.3s ease, opacity 0.3s ease;
-  transform-origin: center;
-}
-
-.bubble-menu .menu-line + .menu-line { margin-top: 6px; }
-
-.bubble-menu .menu-btn.open .menu-line:first-child {
-  transform: translateY(3.75px) rotate(45deg);
-}
-.bubble-menu .menu-btn.open .menu-line:last-child {
-  transform: translateY(-3.75px) rotate(-45deg);
-}
-
-@media (min-width: 768px) {
-  .bubble-menu .bubble { --bubble-size: 56px; }
-  .bubble-menu .logo-bubble { padding: 0 20px; }
-}
-
-/* ─── Pill overlay ──────────────────────────────────────────────── */
-.bubble-menu-items {
-  inset:            0;
-  display:          flex;
-  align-items:      center;
-  justify-content:  center;
-  pointer-events:   none;
-  z-index:          98;
-}
-
-.bubble-menu-items.fixed    { position: fixed;    }
-.bubble-menu-items.absolute { position: absolute; }
-
-.bubble-menu-items .pill-list {
-  list-style:     none;
-  margin:         0;
-  padding:        0 24px;
-  display:        flex;
-  flex-wrap:      wrap;
-  gap:            0;
-  row-gap:        6px;
-  width:          100%;
-  max-width:      1600px;
-  margin-left:    auto;
-  margin-right:   auto;
-  pointer-events: auto;
-  justify-content: stretch;
-}
-
-.bubble-menu-items .pill-col {
   display:         flex;
-  justify-content: center;
-  align-items:     stretch;
-  flex:            0 0 calc(100% / 3);
-  box-sizing:      border-box;
-  padding:         0 6px;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             0;
+  z-index:         1;
 }
 
-/* centering for 4- and 5-item layouts */
-.bubble-menu-items .pill-col:nth-child(4):nth-last-child(2) { margin-left: calc(100% / 6); }
-.bubble-menu-items .pill-col:nth-child(4):last-child        { margin-left: calc(100% / 3); }
-
-.bubble-menu-items .pill-link {
-  --pill-bg:      #ffffff;
-  --pill-color:   #111;
-  --item-rot:     0deg;
-  --pill-min-h:   140px;
-  --hover-bg:     #f3f4f6;
-  --hover-color:  #111;
-
-  width:           100%;
-  min-height:      var(--pill-min-h);
-  padding:         clamp(1.2rem, 2.5vw, 6rem) 0;
+.nox-menu-link {
   font-family:     'Jost', sans-serif;
-  font-size:       clamp(1.4rem, 3.5vw, 3.8rem);
   font-weight:     200;
-  letter-spacing:  0.08em;
-  text-transform:  uppercase;
-  line-height:     0;
-  border-radius:   999px;
-  background:      var(--pill-bg);
-  color:           var(--pill-color);
+  font-size:       clamp(1.6rem, 4vw, 3.6rem);
+  letter-spacing:  0.1em;
+  text-transform:  lowercase;
   text-decoration: none;
-  box-shadow:      0 4px 24px rgba(0, 0, 0, 0.4);
+  display:         block;
+  padding:         0.35em 1.5em;
+  transition:      opacity 0.25s ease;
+  will-change:     transform, opacity;
+  white-space:     nowrap;
+}
+
+.nox-menu-link:hover {
+  opacity: 0.45;
+}
+
+/* ── X close button ───────────────────────────────────────────────── */
+.nox-close-btn {
+  position:        relative;
+  z-index:         1;
+  margin-top:      2.4rem;
+  background:      none;
+  border:          1px solid;
+  border-radius:   50%;
+  width:           52px;
+  height:          52px;
+  font-size:       1.6rem;
+  line-height:     1;
+  cursor:          pointer;
   display:         flex;
   align-items:     center;
   justify-content: center;
-  will-change:     transform;
-  box-sizing:      border-box;
-  white-space:     nowrap;
-  overflow:        hidden;
-  height:          10px; /* min-height wins; keeps flexbox sizing clean */
-  transition:      background 0.3s ease, color 0.3s ease;
+  opacity:         0.55;
+  transition:      opacity 0.25s ease;
+  will-change:     transform, opacity;
 }
 
-@media (min-width: 900px) {
-  .bubble-menu-items .pill-link {
-    transform: rotate(var(--item-rot));
-  }
-  .bubble-menu-items .pill-link:hover {
-    transform:  rotate(var(--item-rot)) scale(1.05);
-    background: var(--hover-bg);
-    color:      var(--hover-color);
-  }
-  .bubble-menu-items .pill-link:active {
-    transform: rotate(var(--item-rot)) scale(0.95);
-  }
+.nox-close-btn:hover {
+  opacity: 1;
 }
 
-.bubble-menu-items .pill-label {
-  display:      inline-block;
-  will-change:  transform, opacity;
-  height:       1.2em;
-  line-height:  1.2;
-}
-
-/* ─── Mobile ───────────────────────────────────────────────────── */
-@media (max-width: 899px) {
-  .bubble-menu-items {
-    align-items: flex-start;
-    padding-top: 110px;
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .nox-bottom-bubble {
+    width:  82px;
+    height: 82px;
+    bottom: 1.3rem;
   }
 
-  .bubble-menu-items .pill-list { row-gap: 12px; }
-
-  .bubble-menu-items .pill-col {
-    flex:        0 0 100%;
-    margin-left: 0 !important;
+  .nox-bottom-bubble-core {
+    width:  58px;
+    height: 58px;
   }
 
-  .bubble-menu-items .pill-link {
-    font-size:  clamp(1.1rem, 3vw, 4rem);
-    padding:    clamp(0.9rem, 2vw, 2rem) 0;
-    min-height: 72px;
+  .nox-circles {
+    width:  90vw;
+    height: 90vw;
   }
 
-  .bubble-menu-items .pill-link:hover {
-    transform:  scale(1.04);
-    background: var(--hover-bg);
-    color:      var(--hover-color);
-  }
-  .bubble-menu-items .pill-link:active {
-    transform: scale(0.96);
+  .nox-menu-link {
+    font-size: clamp(1.3rem, 6vw, 2rem);
+    padding:   0.3em 1em;
   }
 }

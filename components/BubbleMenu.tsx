@@ -15,7 +15,6 @@ export interface MenuItem {
   ariaLabel?: string;
   rotation?: number;
   hoverStyles?: HoverStyles;
-  /** If provided, called instead of following href */
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
@@ -24,6 +23,8 @@ interface BubbleMenuProps {
   onMenuClick?: (open: boolean) => void;
   className?: string;
   style?: React.CSSProperties;
+  showTopNav?: boolean;
+  showBottomBubble?: boolean;
   menuAriaLabel?: string;
   menuBg?: string;
   menuContentColor?: string;
@@ -32,19 +33,15 @@ interface BubbleMenuProps {
   animationEase?: string;
   animationDuration?: number;
   staggerDelay?: number;
-  /**
-   * When provided, controls open/close from the outside — no click needed.
-   * true = open, false = close. Passing undefined = uncontrolled (manual click).
-   */
   forceOpen?: boolean;
 }
 
 const DEFAULT_ITEMS: MenuItem[] = [
-  { label: "home",     href: "#", ariaLabel: "Home",     rotation: -8, hoverStyles: { bgColor: "#3b82f6", textColor: "#ffffff" } },
-  { label: "about",    href: "#", ariaLabel: "About",    rotation:  8, hoverStyles: { bgColor: "#10b981", textColor: "#ffffff" } },
-  { label: "projects", href: "#", ariaLabel: "Projects", rotation:  8, hoverStyles: { bgColor: "#f59e0b", textColor: "#ffffff" } },
-  { label: "blog",     href: "#", ariaLabel: "Blog",     rotation:  8, hoverStyles: { bgColor: "#ef4444", textColor: "#ffffff" } },
-  { label: "contact",  href: "#", ariaLabel: "Contact",  rotation: -8, hoverStyles: { bgColor: "#8b5cf6", textColor: "#ffffff" } },
+  { label: "home",     href: "#" },
+  { label: "about",    href: "#" },
+  { label: "projects", href: "#" },
+  { label: "blog",     href: "#" },
+  { label: "contact",  href: "#" },
 ];
 
 export default function BubbleMenu({
@@ -52,32 +49,33 @@ export default function BubbleMenu({
   onMenuClick,
   className,
   style,
+  showTopNav       = true,
+  showBottomBubble = true,
   menuAriaLabel     = "Toggle menu",
-  menuBg            = "#fff",
-  menuContentColor  = "#111",
+  menuBg            = "#0d0d0d",
+  menuContentColor  = "#ffffff",
   useFixedPosition  = false,
   items,
-  animationEase     = "back.out(1.5)",
-  animationDuration = 0.5,
-  staggerDelay      = 0.12,
+  animationEase     = "power3.out",
+  animationDuration = 0.55,
+  staggerDelay      = 0.09,
   forceOpen,
 }: BubbleMenuProps) {
   const [isMenuOpen,  setIsMenuOpen]  = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
 
   const overlayRef  = useRef<HTMLDivElement>(null);
-  const bubblesRef  = useRef<HTMLAnchorElement[]>([]);
-  const labelRefs   = useRef<HTMLSpanElement[]>([]);
+  const circlesRef  = useRef<SVGSVGElement>(null);
+  const itemRefs    = useRef<HTMLAnchorElement[]>([]);
+  const closeRef    = useRef<HTMLButtonElement>(null);
 
-  const menuItems      = items?.length ? items : DEFAULT_ITEMS;
-  const posClass       = useFixedPosition ? "fixed" : "absolute";
-  const containerClass = ["bubble-menu", posClass, className].filter(Boolean).join(" ");
+  const menuItems = items?.length ? items : DEFAULT_ITEMS;
+  const posClass  = useFixedPosition ? "fixed" : "absolute";
 
   // ── External open/close control ──────────────────────────────────────────
   useEffect(() => {
-    if (forceOpen === undefined) return; // uncontrolled mode — manual click only
+    if (forceOpen === undefined) return;
     if (forceOpen) {
-      // React 18 auto-batches these two setState calls → single re-render
       setShowOverlay(true);
       setIsMenuOpen(true);
     } else {
@@ -93,45 +91,52 @@ export default function BubbleMenu({
     onMenuClick?.(next);
   };
 
-  // ── GSAP open / close animations ─────────────────────────────────────────
+  // ── GSAP animations ───────────────────────────────────────────────────────
   useEffect(() => {
     const overlay = overlayRef.current;
-    const bubbles = bubblesRef.current.filter(Boolean);
-    const labels  = labelRefs.current.filter(Boolean);
+    const circles = circlesRef.current;
+    const links   = itemRefs.current.filter(Boolean);
+    const closeBtn = closeRef.current;
 
-    if (!overlay || !bubbles.length) return;
+    if (!overlay) return;
 
     if (isMenuOpen) {
       gsap.set(overlay, { display: "flex" });
-      gsap.killTweensOf([...bubbles, ...labels]);
-      gsap.set(bubbles, { scale: 0, transformOrigin: "50% 50%" });
-      gsap.set(labels,  { y: 24, autoAlpha: 0 });
+      gsap.killTweensOf([overlay, circles, ...links, closeBtn]);
 
-      bubbles.forEach((bubble, i) => {
-        const delay = i * staggerDelay + gsap.utils.random(-0.05, 0.05);
-        const tl    = gsap.timeline({ delay });
+      gsap.fromTo(overlay,
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: 0.35, ease: "power2.out" }
+      );
 
-        tl.to(bubble, {
-          scale:    1,
-          duration: animationDuration,
-          ease:     animationEase,
-        });
+      if (circles) {
+        gsap.fromTo(circles,
+          { scale: 0, transformOrigin: "50% 50%" },
+          { scale: 1, duration: 0.75, ease: "back.out(1.1)", delay: 0.05 }
+        );
+      }
 
-        if (labels[i]) {
-          tl.to(
-            labels[i],
-            { y: 0, autoAlpha: 1, duration: animationDuration, ease: "power3.out" },
-            `-=${animationDuration * 0.9}`
-          );
-        }
-      });
+      gsap.fromTo(
+        [...links, closeBtn].filter(Boolean),
+        { y: 28, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: animationDuration, ease: animationEase, stagger: staggerDelay, delay: 0.18 }
+      );
+
     } else if (showOverlay) {
-      gsap.killTweensOf([...bubbles, ...labels]);
-      gsap.to(labels,  { y: 24, autoAlpha: 0, duration: 0.2, ease: "power3.in" });
-      gsap.to(bubbles, {
-        scale:    0,
-        duration: 0.2,
-        ease:     "power3.in",
+      gsap.killTweensOf([overlay, circles, ...links, closeBtn]);
+
+      gsap.to([...links, closeBtn].filter(Boolean), {
+        y: 20, autoAlpha: 0, duration: 0.18, ease: "power2.in", stagger: 0.04,
+      });
+
+      if (circles) {
+        gsap.to(circles, {
+          scale: 0, transformOrigin: "50% 50%", duration: 0.28, ease: "power2.in", delay: 0.1,
+        });
+      }
+
+      gsap.to(overlay, {
+        autoAlpha: 0, duration: 0.32, ease: "power2.in", delay: 0.2,
         onComplete: () => {
           gsap.set(overlay, { display: "none" });
           setShowOverlay(false);
@@ -140,81 +145,109 @@ export default function BubbleMenu({
     }
   }, [isMenuOpen, showOverlay, animationEase, animationDuration, staggerDelay]);
 
-  // ── Keep desktop rotations correct on resize ──────────────────────────────
-  useEffect(() => {
-    const handleResize = () => {
-      if (!isMenuOpen) return;
-      const isDesktop = window.innerWidth >= 900;
-      bubblesRef.current.filter(Boolean).forEach((bubble, i) => {
-        const item = menuItems[i];
-        if (item) gsap.set(bubble, { rotation: isDesktop ? (item.rotation ?? 0) : 0 });
-      });
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isMenuOpen, menuItems]);
-
   return (
     <>
-      <nav className={containerClass} style={style} aria-label="Main navigation">
-        {/* Logo bubble */}
-        <div className="bubble logo-bubble" aria-label="Logo" style={{ background: menuBg }}>
-          <span className="logo-content">
-            {typeof logo === "string"
-              ? <img src={logo} alt="Logo" className="bubble-logo" />
-              : logo}
-          </span>
-        </div>
+      {/* ── Nav bar ── */}
+      <nav
+        className={["nox-nav", posClass, !showTopNav ? "nox-nav-hidden" : "", className].filter(Boolean).join(" ")}
+        style={style}
+        aria-label="Main navigation"
+      >
+        <div className="nox-nav-logo">{logo}</div>
 
-        {/* Toggle button */}
         <button
           type="button"
-          className={`bubble toggle-bubble menu-btn ${isMenuOpen ? "open" : ""}`}
+          className={`nox-nav-toggle ${isMenuOpen ? "open" : ""}`}
           onClick={handleToggle}
           aria-label={menuAriaLabel}
           aria-pressed={isMenuOpen}
-          style={{ background: menuBg }}
         >
-          <span className="menu-line" style={{ background: menuContentColor }} />
-          <span className="menu-line short" style={{ background: menuContentColor }} />
+          <span className="toggle-line" />
+          <span className="toggle-line" />
         </button>
       </nav>
 
-      {/* Pill overlay — only in DOM when showOverlay */}
+      {showBottomBubble && (
+        <button
+          type="button"
+          className={`nox-bottom-bubble ${posClass} ${isMenuOpen ? "open" : ""}`}
+          onClick={handleToggle}
+          aria-label={menuAriaLabel}
+          aria-pressed={isMenuOpen}
+        >
+          <span className="nox-bottom-bubble-core" aria-hidden="true">
+            <svg
+              className="nox-bottom-bubble-icon"
+              viewBox="0 0 64 64"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle cx="32" cy="32" r="24" stroke="currentColor" strokeWidth="6" />
+              <circle cx="32" cy="32" r="14" stroke="currentColor" strokeWidth="6" />
+              <circle cx="32" cy="32" r="4" fill="currentColor" />
+            </svg>
+          </span>
+        </button>
+      )}
+
+      {/* ── Full-screen overlay ── */}
       {showOverlay && (
         <div
           ref={overlayRef}
-          className={`bubble-menu-items ${posClass}`}
+          className={`nox-overlay ${posClass}`}
           aria-hidden={!isMenuOpen}
+          style={{ background: menuBg }}
         >
-          <ul className="pill-list" role="menu" aria-label="Menu links">
+          {/* Concentric circles */}
+          <svg
+            ref={circlesRef}
+            className="nox-circles"
+            viewBox="0 0 600 600"
+            aria-hidden="true"
+          >
+            {[285, 228, 171, 114, 57].map((r, i) => (
+              <circle
+                key={i}
+                cx="300"
+                cy="300"
+                r={r}
+                fill="none"
+                stroke={menuContentColor}
+                strokeWidth="1"
+                opacity={0.08 + i * 0.055}
+              />
+            ))}
+          </svg>
+
+          {/* Items */}
+          <ul className="nox-menu-list" role="menu">
             {menuItems.map((item, idx) => (
-              <li key={idx} role="none" className="pill-col">
+              <li key={idx} role="none">
                 <a
                   role="menuitem"
                   href={item.href}
                   aria-label={item.ariaLabel || item.label}
-                  className="pill-link"
-                  style={{
-                    "--item-rot":   `${item.rotation ?? 0}deg`,
-                    "--pill-bg":    menuBg,
-                    "--pill-color": menuContentColor,
-                    "--hover-bg":   item.hoverStyles?.bgColor   || "#f3f4f6",
-                    "--hover-color":item.hoverStyles?.textColor || menuContentColor,
-                  } as React.CSSProperties}
-                  ref={(el) => { if (el) bubblesRef.current[idx] = el; }}
+                  className="nox-menu-link"
+                  style={{ color: menuContentColor }}
+                  ref={(el) => { if (el) itemRefs.current[idx] = el; }}
                   onClick={item.onClick ? (e) => { e.preventDefault(); item.onClick!(e); } : undefined}
                 >
-                  <span
-                    className="pill-label"
-                    ref={(el) => { if (el) labelRefs.current[idx] = el; }}
-                  >
-                    {item.label}
-                  </span>
+                  {item.label}
                 </a>
               </li>
             ))}
           </ul>
+
+          {/* X close button */}
+          <button
+            ref={closeRef}
+            className="nox-close-btn"
+            onClick={handleToggle}
+            aria-label="Close menu"
+            style={{ color: menuContentColor, borderColor: menuContentColor }}
+          >
+            ×
+          </button>
         </div>
       )}
     </>
